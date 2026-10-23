@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   release:
@@ -22,11 +23,6 @@ jobs:
           persist-credentials: false
 
       - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31
-
-      - uses: cachix/cachix-action@ad2ddac53f961de1989924296a1f236fcfbaa4fc # v15
-        with:
-          name: atomic-235
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Resolve latest npm version
         id: latest
@@ -63,22 +59,44 @@ jobs:
           npm_deps_hash="$(nix run nixpkgs#prefetch-npm-deps -- package-lock.json | tail -1)"
 
           jq -n --arg v "$VERSION" --arg i "$integrity" --arg h "$npm_deps_hash" \
-            '{version: $v, integrity: $i, npmDepsHash: $h}' > version.json
+            '{version: $v, integrity: $i, npmDepsHash: $h, assets: {}}' > version.json
 
           echo "publish=true" >> "$GITHUB_OUTPUT"
 
-      - name: Build
+      - name: Build self-contained bundle
+        id: build
         if: steps.hashes.outputs.publish == 'true'
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+        run: |
+          nix bundle --bundler github:NixOS/bundlers#toArx '.#unbundled' -o "$RUNNER_TEMP/venice-arx"
+          cp -L "$RUNNER_TEMP/venice-arx" venice-mcp-linux-x86_64
+          bin_sha="$(nix hash file --type sha256 --sri venice-mcp-linux-x86_64)"
+
+          jq --arg s "$bin_sha" '.assets["x86_64-linux"] = $s' version.json > version.json.tmp
+          mv version.json.tmp version.json
+          echo "bundle=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release asset
+        if: steps.build.outputs.bundle == 'true'
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view "v${VERSION}" >/dev/null 2>&1; then
+            gh release create "v${VERSION}" --title "venice-mcp-server ${VERSION}" \
+              --notes "Self-contained venice-mcp-server ${VERSION} bundle (node + node_modules + dist)."
+          fi
+          gh release upload "v${VERSION}" venice-mcp-linux-x86_64 --clobber
+
+      # The published bundle must satisfy the flake's fixed-output check before
+      # the commit points consumers at it.
+      - name: Verify the flake can consume the bundle
+        if: steps.build.outputs.bundle == 'true'
         run: nix build --no-link .#default
 
-      # Publish the store path before moving any ref, so the tagged commit is
-      # always substitutable.
-      - name: Push to cache
-        if: steps.hashes.outputs.publish == 'true'
-        run: cachix push atomic-235 "$(nix build --no-link --print-out-paths .#default)"
-
       - name: Commit and tag
-        if: steps.hashes.outputs.publish == 'true'
+        if: steps.build.outputs.bundle == 'true'
         env:
           VERSION: ${{ steps.latest.outputs.version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -94,3 +112,13 @@ jobs:
           git tag -f "v${VERSION}"
           git tag -f latest
           git push --force origin "v${VERSION}" latest
+
+      - name: Open issue when the build fails
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.latest.outputs.version }}
+        run: |
+          gh issue create \
+            --title "venice-mcp-server ${VERSION}: release build failed" \
+            --body "The release build for venice-mcp-server ${VERSION} failed. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
