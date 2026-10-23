@@ -2,5 +2,7 @@
   "version": "0.3.0",
   "integrity": "sha512-zF/41cFgwAJFRrR45Yh5KRkEFMQmdqtoJ08ZBenbgqfhZ2de+m21kcfxlSKUa3IA4sTtGt0jdm4PSnePbVjziQ==",
   "npmDepsHash": "sha256-6jYtb8/xtXmgEiFEWLsXYm3DWDB97Tr5s01O0WHolmU=",
-  "assets": {}
+  "assets": {
+    "x86_64-linux": "sha256-4MMMgNbppxj1hJUY2Uvu879SBXYpgaiH5r/AZqlTBn8="
+  }
 }
