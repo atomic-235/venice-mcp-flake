@@ -4,6 +4,7 @@
   buildNpmPackage,
   makeWrapper,
   nodejs,
+  cacert,
 }:
 
 let
@@ -37,7 +38,8 @@ buildNpmPackage {
     cp -r . $out/lib/venice-mcp
     makeWrapper ${nodejs}/bin/node $out/bin/venice-mcp \
       --add-flags "$out/lib/venice-mcp/dist/cli.js" \
-      --set NODE_OPTIONS "--use-env-proxy"
+      --set NODE_OPTIONS "--use-env-proxy" \
+      --set SSL_CERT_FILE "${cacert}/etc/ssl/certs/ca-bundle.crt"
     runHook postInstall
   '';
 
