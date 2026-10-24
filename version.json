@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "integrity": "sha512-zF/41cFgwAJFRrR45Yh5KRkEFMQmdqtoJ08ZBenbgqfhZ2de+m21kcfxlSKUa3IA4sTtGt0jdm4PSnePbVjziQ==",
-  "npmDepsHash": "sha256-6jYtb8/xtXmgEiFEWLsXYm3DWDB97Tr5s01O0WHolmU=",
+  "npmDepsHash": "sha256-0jhvglOTEhjYrhfET7iWKlV+1e4BYToKz22ggPwDl18=",
   "assets": {
-    "x86_64-linux": "sha256-4MMMgNbppxj1hJUY2Uvu879SBXYpgaiH5r/AZqlTBn8="
+    "x86_64-linux": "sha256-n6+ThmrUhfprT8I0OfznslDaTqGre8diAYxUuD2zogk="
   }
 }
