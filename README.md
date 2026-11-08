@@ -1,8 +1,9 @@
 # venice-mcp-flake
 
 [Venice AI](https://venice.ai) MCP server (`venice-mcp-server`), installed from
-the published npm tarball with the dependencies pinned by the committed
-`package-lock.json`, then published as a **self-contained arx bundle**.
+the published npm tarball, then published as a **self-contained arx bundle**.
+The tarball ships its own `node_modules`, so no dependency resolution happens
+during the build.
 
 The package is not in nixpkgs; the bundle means consumers get a single
 executable with Node and every dependency inside, no build and no binary cache.
@@ -13,7 +14,7 @@ executable with Node and every dependency inside, no build and no binary cache.
 |---|---|
 | `packages.<system>.default` | the published bundle |
 | `packages.<system>.venice-mcp-server` | alias of `default` |
-| `packages.<system>.unbundled` | npm tarball + `npm ci` output, before bundling |
+| `packages.<system>.unbundled` | npm tarball contents, before bundling |
 
 `overlays.default` provides `pkgs.venice-mcp-server`.
 
@@ -36,7 +37,7 @@ packages the binary.
 
 ## Updates
 
-CI runs daily at 06:00 UTC: resolve the latest npm version, refresh
-`package-lock.json` and `npmDepsHash`, build, bundle, upload
+CI runs daily at 06:00 UTC: resolve the latest npm version, pin its tarball
+integrity hash in `version.json`, build, bundle, upload
 `venice-mcp-linux-x86_64`, verify the flake can fetch the asset, then commit and
 tag `v<version>` (force-moving `latest`).

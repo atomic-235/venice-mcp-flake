@@ -41,7 +41,7 @@ jobs:
             echo "new=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Update version, lock and hash
+      - name: Pin version and tarball hash
         id: hashes
         if: steps.check.outputs.new == 'true'
         env:
@@ -49,17 +49,9 @@ jobs:
         run: |
           meta="$(curl -fsSL "https://registry.npmjs.org/@veniceai/mcp-server/${VERSION}")"
           integrity="$(printf '%s' "$meta" | jq -r .dist.integrity)"
-          tarball="$(printf '%s' "$meta" | jq -r .dist.tarball)"
 
-          tmp="$(mktemp -d)"
-          curl -fsSL "$tarball" | tar xz -C "$tmp"
-          ( cd "$tmp/package" && npm install --package-lock-only --ignore-scripts --legacy-peer-deps >/dev/null )
-          cp "$tmp/package/package-lock.json" package-lock.json
-
-          npm_deps_hash="$(nix run nixpkgs#prefetch-npm-deps -- package-lock.json | tail -1)"
-
-          jq -n --arg v "$VERSION" --arg i "$integrity" --arg h "$npm_deps_hash" \
-            '{version: $v, integrity: $i, npmDepsHash: $h, assets: {}}' > version.json
+          jq -n --arg v "$VERSION" --arg i "$integrity" \
+            '{version: $v, integrity: $i, assets: {}}' > version.json
 
           echo "publish=true" >> "$GITHUB_OUTPUT"
 
@@ -104,7 +96,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git add version.json package-lock.json flake.lock
+          git add version.json flake.lock
           if ! git diff --cached --quiet; then
             git commit -m "release: venice-mcp-server ${VERSION}"
             git push origin HEAD:main

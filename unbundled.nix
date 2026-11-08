@@ -1,16 +1,21 @@
 {
   lib,
+  stdenv,
   fetchurl,
-  buildNpmPackage,
   makeWrapper,
   nodejs,
   cacert,
 }:
 
+# The npm tarball ships a fully populated node_modules (bundleDependencies:
+# true), so there is nothing to install and no npm dependency hash to keep in
+# sync. Pulling the registry dep tree with buildNpmPackage used to fail because
+# npm marks bundled deps as `inBundle` without `resolved` URLs, leaving them
+# out of the offline cache.
 let
   data = builtins.fromJSON (builtins.readFile ./version.json);
 in
-buildNpmPackage {
+stdenv.mkDerivation {
   pname = "venice-mcp-server";
   version = data.version;
 
@@ -19,21 +24,16 @@ buildNpmPackage {
     hash = data.integrity;
   };
 
-  # Generated from the published tarball's package.json; bumped by CI.
-  postPatch = ''
-    cp ${./package-lock.json} package-lock.json
-  '';
-
-  npmDepsHash = data.npmDepsHash;
-  npmFlags = [ "--legacy-peer-deps" ];
-
-  # The npm tarball already ships a built dist/; only dependencies are installed.
   dontBuild = true;
 
   nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
     runHook preInstall
+    if [ ! -d node_modules ]; then
+      echo "error: upstream tarball no longer bundles node_modules; rework packaging" >&2
+      exit 1
+    fi
     mkdir -p $out/lib/venice-mcp $out/bin
     cp -r . $out/lib/venice-mcp
     makeWrapper ${nodejs}/bin/node $out/bin/venice-mcp \
