@@ -1,7 +1,7 @@
 {
-  "version": "0.3.1",
-  "integrity": "sha512-v/hz7vg3H+ySwDu4WeigzDa0R2iuc++Yb18YfuEH1NU0pBQllMqn2dKW3n76d/3CQFN0tOi6GhjW2LBVrLzsHA==",
+  "version": "0.3.2",
+  "integrity": "sha512-n/sOx8wHyl6TDAGHVejddgyXn+ax04GhsYWaC1L0aImImDQK4p21Ud0Cwom9rJiUVDoI3efqBSRh8HwY3wgZ8w==",
   "assets": {
-    "x86_64-linux": "sha256-ZPQhfgMLQ3a+Vq5mL4yD4iaK+SXlA4PP4/o+BpILYFQ="
+    "x86_64-linux": "sha256-xMrF+fFmeC0pwqMRNVdDYkf7yVroEgcZmDVLj6M8Mbw="
   }
 }
